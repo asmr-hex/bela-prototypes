@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+function usage() {
+    echo "      ___                       ___           ___      "
+    echo "     /  /\          ___        /__/\         /  /\     "
+    echo "    /  /:/_        /__/|       \  \:\       /  /:/     "
+    echo "   /  /:/ /\      |  |:|        \  \:\     /  /:/      "
+    echo "  /  /:/ /::\     |  |:|    _____\__\:\   /  /:/  ___  "
+    echo " /__/:/ /:/\:\  __|__|:|   /__/::::::::\ /__/:/  /  /\ "
+    echo " \  \:\/:/~/:/ /__/::::\   \  \:\~~\~~\/ \  \:\ /  /:/ "
+    echo "  \  \::/ /:/     ~\~~\:\   \  \:\  ~~~   \  \:\  /:/  "
+    echo "   \__\/ /:/        \  \:\   \  \:\        \  \:\/:/   "
+    echo "     /__/:/          \__\/    \  \:\        \  \::/    "
+    echo "     \__\/                     \__\/         \__\/     "
+    echo " "
+    echo "sync projects to and from Bela."
+    echo " "
+    echo "Usage:"
+    echo "  sync [direction]  [-p <project_name>] [-a <addr>]"
+    echo "     to"
+    echo "        copy projects or project to the Bela hardware."
+    echo "     from"
+    echo "        copy projects or project from the Bela hardware. (default)"
+    echo "     -p <project_name>"
+    echo "        copies a specific project, all otherwise."
+    echo "     -a <addr>"
+    echo "         address of Bela. (192.168.7.2 = default)"
+    echo "     help"
+    echo "         this message"
+}
+
+# initialize defaults
+DIRECTION="from"
+PROJECT="all"
+ADDR="192.168.7.2"
+
+function run_sync() {
+    echo "syncing $PROJECT $DIRECTION $ADDR..."
+    for project in $(ssh root@$ADDR ls /root/Bela/projects/)
+    do
+	# ignore default projects and temporary projects
+	if [[ "$project" == "basic" || "$project" == "exampleTempProject" ]]; then
+	    continue
+	fi
+
+	if [[ "$DIRECTION" == "to" ]]; then
+	    echo "TODO"
+	fi
+
+	if [[ "$DIRECTION" == "from" ]]; then
+	    rsync -av --exclude $project/build root@$ADDR:/root/Bela/projects/$project .
+	fi
+    done
+}
+
+# check arguments
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+    case $key in
+	-p)
+	    PROJECT="$2"
+	    shift
+	    shift
+	    ;;
+	-a)
+	    ADDR="$2"
+	    shift
+	    shift
+	    ;;
+	to)
+	    DIRECTION="to"
+	    shift
+	    ;;
+	from)
+	    DIRECTION="from"
+	    shift
+	    ;;
+	-h|help)
+	    usage
+	    exit 0
+    esac
+done
+
+run_sync
