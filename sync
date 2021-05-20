@@ -48,7 +48,9 @@ function run_sync() {
 	fi
 
 	if [[ "$DIRECTION" == "from" ]]; then
-	    rsync -av --exclude $project/build root@$ADDR:/root/Bela/projects/$project .
+	    EXCLUDE_BIN=--exclude=$project/$project
+	    EXCLUDE_SOUND_FILES=--exclude='*.wav'
+	    rsync -av --exclude $project/build $EXCLUDE_BIN $EXCLUDE_SOUND_FILES root@$ADDR:/root/Bela/projects/$project .
 	fi
     done
 }
