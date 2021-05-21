@@ -12,10 +12,19 @@
      \__\/                      \__\/         \__\|         \__\/   
 
 */
+#include <vector>
 
 #include <Bela.h>
 #include <libraries/AudioFile/AudioFile.h>
-#include <vector>
+#include <libraries/Gui/Gui.h>
+#include <libraries/GuiController/GuiController.h>
+
+Gui gui;
+GuiController controller;
+
+unsigned int gSensitivitySliderIdx;
+unsigned int gStartSliderIdx;
+int gStartValue = 0;
 
 #define BUFFER_LEN 22050   // BUFFER LENGTH
 
@@ -39,9 +48,15 @@ int gDoneLoadingBuffer = 1;
 AuxiliaryTask gFillBufferTask;
 
 void fillBuffer(void*) {
+    static int prevStartValue = 0;
     
-    // increment buffer read pointer by buffer length
-    gBufferReadPtr+=BUFFER_LEN;
+    if (gStartValue != prevStartValue) {
+    	gBufferReadPtr=gStartValue;
+    	prevStartValue = gStartValue;
+    } else {
+    	// increment buffer read pointer by buffer length
+		gBufferReadPtr+=BUFFER_LEN;   	
+    }
     
     // reset buffer pointer if it exceeds the number of frames in the file
     if(gBufferReadPtr>=gNumFramesInFile)
@@ -98,11 +113,29 @@ bool setup(BelaContext *context, void *userData)
 	gSampleBuf[0] = AudioFileUtilities::load(gFilename, BUFFER_LEN, 0);
 	gSampleBuf[1] = gSampleBuf[0]; // initialise the inactive buffer with the same channels and frames as the first one
 
+	// Set up the GUI
+	gui.setup(context->projectName);
+	// and attach to it
+	controller.setup(&gui, "Controls");
+
+	// Arguments: name, default value, minimum, maximum, increment
+	gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, BUFFER_LEN, 1); 
+	gStartSliderIdx = controller.addSlider("Scrub", 0, 0, gNumFramesInFile, 4410);
+	
 	return true;
 }
 
 void render(BelaContext *context, void *userData)
 {
+	// Access the sliders specifying the index we obtained when creating then
+	int sensitivity = static_cast<int>(controller.getSliderValue(gSensitivitySliderIdx));
+	
+	// update the sensitivity of the scrubber
+	controller.getSlider(gStartSliderIdx).setStep(sensitivity);
+	
+	// get scrubber position
+	gStartValue = static_cast<int>(controller.getSliderValue(gStartSliderIdx));
+	
     for(unsigned int n = 0; n < context->audioFrames; n++) {
         
         // Increment read pointer and reset to 0 when end of file is reached
