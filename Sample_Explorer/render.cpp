@@ -54,12 +54,12 @@ void render(BelaContext *context, void *userData) {
 	
   // get scrubber position
   sample->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
-	
+  
   for(unsigned int n = 0; n < context->audioFrames; n++) {
-    std::vector<float> out = sample->next();
+    sample->advance();
     
     for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
-      audioWrite(context, n, channel, out[n]);
+      audioWrite(context, n, channel, sample->read(n));
     }
   }
 }

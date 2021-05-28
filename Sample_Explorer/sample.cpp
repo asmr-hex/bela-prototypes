@@ -33,7 +33,7 @@ void Sample::trigger() {
 	
 }
 
-std::vector<float> Sample::next() {
+void Sample::advance() {
   // increment the read pointer
   if (++buffer_read_ptr >= buffer_len) {
 
@@ -47,15 +47,13 @@ std::vector<float> Sample::next() {
 
     // schedule next buffer fill task
     Bela_scheduleAuxiliaryTask(fill_buffer_task);
-  }
 
-  // copy next samples into output buffer.
-  for (unsigned int channel = 0; channel < channel_outputs.size(); channel++) {
-    // wrap channel index in case there are more output channels than the file has.
-    channel_outputs[channel] = buffer[active_buffer][channel%buffer[0].size()][buffer_read_ptr];
+    // rt_printf("Scheduled Task! (active buffer: %i)\n", active_buffer);
   }
-  
-  return channel_outputs;
+}
+
+float Sample::read(int channel) {
+  return buffer[active_buffer][channel%buffer[0].size()][buffer_read_ptr];
 }
 
 void Sample::seek(int frame) {

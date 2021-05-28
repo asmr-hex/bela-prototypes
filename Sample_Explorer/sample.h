@@ -14,7 +14,8 @@ public:
 
   void load(std::string filename);
   void trigger();
-  std::vector<float> next();
+  void advance();
+  float read(int channel);
   void seek(int frame);
   
   std::string filename;
