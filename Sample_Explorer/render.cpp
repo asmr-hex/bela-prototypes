@@ -20,6 +20,7 @@
 #include <libraries/GuiController/GuiController.h>
 
 #include <sample.h>
+#include <sampler.h>
 
 Sample* sample;
 
