@@ -27,6 +27,8 @@ Sampler* sampler;
 Gui gui;
 GuiController controller;
 
+int clientBuffer0Id;
+
 unsigned int gSensitivitySliderIdx;
 unsigned int gStartSliderIdx;
 int gStartValue = 0;
@@ -38,25 +40,44 @@ bool setup(BelaContext *context, void *userData) {
   
   // Set up the GUI
   gui.setup(context->projectName);
+
+  // set buffer to receive from GUI
+  clientBuffer0Id = gui.setBuffer('d', 2);
+  
+  // initialize gui data
+  // gui.sendBuffer(0, sampler->size());
+  
   // and attach to it
-  controller.setup(&gui, "Controls");
+  // controller.setup(&gui, "Controls");
   
   // Arguments: name, default value, minimum, maximum, increment
-  gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, sampler->samples[0]->get_buffer_len(), 1); 
-  gStartSliderIdx = controller.addSlider("Scrub", 0, 0, sampler->samples[0]->size(), 4410);
+  // gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, sampler->samples[0]->get_buffer_len(), 1); 
+  // gStartSliderIdx = controller.addSlider("Scrub", 0, 0, sampler->samples[0]->size(), 4410);
 	
   return true;
 }
 
 void render(BelaContext *context, void *userData) {
+  //We store the DataBuffer in 'buffer'
+  DataBuffer& buffer = gui.getDataBuffer(clientBuffer0Id);
+  // Retrieve contents of the buffer as ints
+  int* data = buffer.getAsInt();
+  int triggeredSample = data[0];
+  int isTriggered = data[1];
+
+  if (isTriggered) {
+    sampler->samples[triggeredSample]->trigger();
+    rt_printf("%i sample is triggered", triggeredSample);
+  }
+  
   // Access the sliders specifying the index we obtained when creating then
-  int sensitivity = static_cast<int>(controller.getSliderValue(gSensitivitySliderIdx));
+  // int sensitivity = static_cast<int>(controller.getSliderValue(gSensitivitySliderIdx));
 	
   // update the sensitivity of the scrubber
-  controller.getSlider(gStartSliderIdx).setStep(sensitivity);
+  // controller.getSlider(gStartSliderIdx).setStep(sensitivity);
 	
   // get scrubber position
-  sampler->samples[0]->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
+  // sampler->samples[0]->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
 
   // fill buffers if necessary
   sampler->schedule_fill_buffers();

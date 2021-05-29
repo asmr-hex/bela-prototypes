@@ -36,7 +36,7 @@ void Sample::load(std::string filename) {
 }
 
 void Sample::trigger() {
-	
+  forceable_seek(0, true);
 }
 
 void Sample::advance() {
@@ -63,9 +63,13 @@ float Sample::read(int channel) {
 }
 
 void Sample::seek(int frame) {
+  forceable_seek(frame, false);
+}
+
+void Sample::forceable_seek(int frame, bool force) {
   start = frame;
 
-  if (prev_start != start) {
+  if (prev_start != start || force) {
     // TODO reset read head and buffers.
     must_fill_next_buffer_asap = true;
     must_fill_next_buffer = true; 

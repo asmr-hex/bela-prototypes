@@ -56,6 +56,8 @@ private:
   // AuxiliaryTask fill_buffer_task;
   
   // void init_fill_buffer_task();
+
+  void forceable_seek(int frame, bool force);
 };
 
 #endif
