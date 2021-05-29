@@ -3,12 +3,14 @@
 #include <libraries/AudioFile/AudioFile.h>
 
 
-Sample::Sample(std::string filename, int n_output_channels) : channel_outputs(n_output_channels, 0.0) {
-  init_fill_buffer_task();
+Sample::Sample(std::string filename) {
+  // init_fill_buffer_task();
   load(filename);
 }
 
 void Sample::load(std::string filename) {
+  is_loading = true;
+  
   this->filename = filename;
   
   total_frames = AudioFileUtilities::getNumFrames(filename);
@@ -20,6 +22,7 @@ void Sample::load(std::string filename) {
     throw "Sample must be larger than buffer!";
 
   // always initialize start and end
+  prev_start = 0;
   start = 0;
   end = total_frames;
   
@@ -27,6 +30,9 @@ void Sample::load(std::string filename) {
   buffer[0] = AudioFileUtilities::load(filename, buffer_len, 0);
   buffer[1] = buffer[0];
   buffer[2] = buffer[0];
+
+  must_fill_next_buffer = false;
+  is_loading = false;
 }
 
 void Sample::trigger() {
@@ -44,9 +50,10 @@ void Sample::advance() {
     done_loading_next_buffer = 0;
     buffer_read_ptr = 0;
     active_buffer = !active_buffer;
+    must_fill_next_buffer = true;
 
     // schedule next buffer fill task
-    Bela_scheduleAuxiliaryTask(fill_buffer_task);
+    // Bela_scheduleAuxiliaryTask(fill_buffer_task);
 
     // rt_printf("Scheduled Task! (active buffer: %i)\n", active_buffer);
   }
@@ -70,22 +77,26 @@ int Sample::size() {
   return total_frames;
 }
 
-void Sample::init_fill_buffer_task() {
-  fill_buffer_task =
-    Bela_createAuxiliaryTask([] (void *user_data) {
-                               Sample *this_sample = static_cast<Sample *>(user_data);
-                               this_sample->fill_buffer();
-                             },
-                             fill_task_priority,
-                             "fill_buffer",
-                             this);
-    
-  if (fill_buffer_task == 0)
-    throw "Unable to schedule auxiliary fill buffer task!";
+bool Sample::buffer_needs_filling() {
+  return must_fill_next_buffer;
 }
 
+// void Sample::init_fill_buffer_task() {
+//   fill_buffer_task =
+//     Bela_createAuxiliaryTask([] (void *user_data) {
+//                                Sample *this_sample = static_cast<Sample *>(user_data);
+//                                this_sample->fill_buffer();
+//                              },
+//                              fill_task_priority,
+//                              "fill_buffer",
+//                              this);
+    
+//   if (fill_buffer_task == 0)
+//     throw "Unable to schedule auxiliary fill buffer task!";
+// }
+
 void Sample::fill_buffer() {
-  static int prev_start = 0;
+  if (is_loading) return;
 
   if (start != prev_start) {
     // seek location has changed (REFACTOR THIS)
@@ -126,5 +137,6 @@ void Sample::fill_buffer() {
     }
   }
   
-  done_loading_next_buffer = 1;
+  done_loading_next_buffer = true;
+  must_fill_next_buffer = false;
 }

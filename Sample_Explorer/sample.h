@@ -10,7 +10,7 @@
 
 class Sample {
 public:
-  Sample(std::string filename, int n_output_channels);
+  Sample(std::string filename);
 
   void load(std::string filename);
   void trigger();
@@ -23,21 +23,25 @@ public:
   int get_buffer_len();
   int size();
 
-  // should only be called within auxiliary task calback
   void fill_buffer();
+  bool buffer_needs_filling();
 private:
   const int buffer_len = 22050;
-  std::vector<float> channel_outputs;
   int total_frames;
 
+  int prev_start;
   int start;
   int end;
+
+  bool is_loading = false;
   
   // Three buffers for each channel:
   // one of them loads the next chunk of audio
   // one is used for playback
   // and one is pinned to the beginning of the sample (since triggers can't be predicted)
   std::vector<std::vector<float> > buffer[3];
+
+  bool must_fill_next_buffer = false;
   
   int active_buffer = 0;
   
@@ -49,10 +53,10 @@ private:
 
   bool done_loading_next_buffer = true;
 
-  const int fill_task_priority = 90;
-  AuxiliaryTask fill_buffer_task;
+  // const int fill_task_priority = 90;
+  // AuxiliaryTask fill_buffer_task;
   
-  void init_fill_buffer_task();
+  // void init_fill_buffer_task();
 };
 
 #endif

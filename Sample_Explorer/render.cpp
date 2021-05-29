@@ -19,10 +19,10 @@
 #include <libraries/Gui/Gui.h>
 #include <libraries/GuiController/GuiController.h>
 
-#include <sample.h>
 #include <sampler.h>
 
-Sample* sample;
+
+Sampler* sampler;
 
 Gui gui;
 GuiController controller;
@@ -32,16 +32,18 @@ unsigned int gStartSliderIdx;
 int gStartValue = 0;
 
 bool setup(BelaContext *context, void *userData) {
-  sample = new Sample("samples/tape.wav", context->audioOutChannels);
-
+  sampler = new Sampler();
+  sampler->load("samples/tape.wav");
+  sampler->load("samples/glass-harp.wav");
+  
   // Set up the GUI
   gui.setup(context->projectName);
   // and attach to it
   controller.setup(&gui, "Controls");
   
   // Arguments: name, default value, minimum, maximum, increment
-  gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, sample->get_buffer_len(), 1); 
-  gStartSliderIdx = controller.addSlider("Scrub", 0, 0, sample->size(), 4410);
+  gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, sampler->samples[0]->get_buffer_len(), 1); 
+  gStartSliderIdx = controller.addSlider("Scrub", 0, 0, sampler->samples[0]->size(), 4410);
 	
   return true;
 }
@@ -54,13 +56,21 @@ void render(BelaContext *context, void *userData) {
   controller.getSlider(gStartSliderIdx).setStep(sensitivity);
 	
   // get scrubber position
-  sample->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
+  sampler->samples[0]->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
+
+  // fill buffers if necessary
+  sampler->schedule_fill_buffers();
   
   for(unsigned int n = 0; n < context->audioFrames; n++) {
-    sample->advance();
+    sampler->process_next_samples();
     
     for(unsigned int channel = 0; channel < context->audioOutChannels; channel++) {
-      audioWrite(context, n, channel, sample->read(n));
+      float out = 0.0;
+      for (unsigned int i = 0; i < sampler->size(); i++) {
+        out += sampler->read(i, n);
+      }
+      
+      audioWrite(context, n, channel, out);
     }
   }
 }

@@ -28,20 +28,20 @@ public:
   Sampler();
 
   void load(std::string filename);
-  void advance();
-  void advance();
+  void process_next_samples();
   float read(int sample_idx, int channel);
 
   int size();
 
+  void schedule_fill_buffers();
   void fill_buffers();
-private:
-  std::vector<std::unique_ptr<Sample> > samples;
 
+  std::vector<std::unique_ptr<Sample> > samples;
+private:
   const int fill_task_priority = 90;
   AuxiliaryTask fill_buffers_task;
   
   void init_fill_buffers_task();
-}
+};
 
 #endif
