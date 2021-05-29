@@ -41,6 +41,7 @@ private:
   // and one is pinned to the beginning of the sample (since triggers can't be predicted)
   std::vector<std::vector<float> > buffer[3];
 
+  bool must_fill_next_buffer_asap = false;
   bool must_fill_next_buffer = false;
   
   int active_buffer = 0;
@@ -50,8 +51,6 @@ private:
   
   // read pointer relative to file, incremented by buffer_len
   int file_read_ptr = 0;
-
-  bool done_loading_next_buffer = true;
 
   // const int fill_task_priority = 90;
   // AuxiliaryTask fill_buffer_task;

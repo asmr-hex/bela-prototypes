@@ -40,14 +40,13 @@ void Sample::trigger() {
 }
 
 void Sample::advance() {
-  // increment the read pointer
+  // increment the buffer read pointer
   if (++buffer_read_ptr >= buffer_len) {
 
     // shucks.
-    if (!done_loading_next_buffer)
+    if (must_fill_next_buffer)
       rt_printf("Couldn't load next buffer in time :( -- try increasing buffer size!)");
 
-    done_loading_next_buffer = 0;
     buffer_read_ptr = 0;
     active_buffer = !active_buffer;
     must_fill_next_buffer = true;
@@ -66,7 +65,11 @@ float Sample::read(int channel) {
 void Sample::seek(int frame) {
   start = frame;
 
-  // TODO reset read head and buffers.
+  if (prev_start != start) {
+    // TODO reset read head and buffers.
+    must_fill_next_buffer_asap = true;
+    must_fill_next_buffer = true; 
+  }
 }
 
 int Sample::get_buffer_len() {
@@ -78,7 +81,7 @@ int Sample::size() {
 }
 
 bool Sample::buffer_needs_filling() {
-  return must_fill_next_buffer;
+  return must_fill_next_buffer || must_fill_next_buffer_asap;
 }
 
 // void Sample::init_fill_buffer_task() {
@@ -136,7 +139,12 @@ void Sample::fill_buffer() {
       }
     }
   }
-  
-  done_loading_next_buffer = true;
-  must_fill_next_buffer = false;
+
+  if (must_fill_next_buffer_asap) {
+    buffer_read_ptr = 0;
+    active_buffer = !active_buffer;
+    must_fill_next_buffer_asap = false;
+  } else {
+    must_fill_next_buffer = false;  
+  }
 }
