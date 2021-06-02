@@ -16,18 +16,14 @@
 
 #include <Bela.h>
 #include <libraries/AudioFile/AudioFile.h>
-#include <libraries/Gui/Gui.h>
-#include <libraries/GuiController/GuiController.h>
 
 #include <sampler.h>
+#include <gui.h>
 
 
 Sampler* sampler;
+SamplerGui* gui;
 
-Gui gui;
-GuiController controller;
-
-int clientBuffer0Id;
 
 unsigned int gSensitivitySliderIdx;
 unsigned int gStartSliderIdx;
@@ -39,12 +35,14 @@ bool setup(BelaContext *context, void *userData) {
   sampler->load("samples/glass-harp.wav");
   
   // Set up the GUI
-  gui.setup(context->projectName);
+  gui = new SamplerGui(context->projectName);
+  // gui.setup(context->projectName);
 
   // set buffer to receive from GUI
-  clientBuffer0Id = gui.setBuffer('d', 2);
+  // clientBuffer0Id = gui.setBuffer('d', 2);
   
   // initialize gui data
+  gui->sendSamplerSize(sampler->size());
   // gui.sendBuffer(0, sampler->size());
   
   // and attach to it
@@ -58,17 +56,19 @@ bool setup(BelaContext *context, void *userData) {
 }
 
 void render(BelaContext *context, void *userData) {
+  gui->check(sampler);
+  
   //We store the DataBuffer in 'buffer'
-  DataBuffer& buffer = gui.getDataBuffer(clientBuffer0Id);
-  // Retrieve contents of the buffer as ints
-  int* data = buffer.getAsInt();
-  int triggeredSample = data[0];
-  int isTriggered = data[1];
+  // DataBuffer& buffer = gui.getDataBuffer(clientBuffer0Id);
+  // // Retrieve contents of the buffer as ints
+  // int* data = buffer.getAsInt();
+  // int triggeredSample = data[0];
+  // int isTriggered = data[1];
 
-  if (isTriggered) {
-    sampler->samples[triggeredSample]->trigger();
-    rt_printf("%i sample is triggered", triggeredSample);
-  }
+  // if (isTriggered) {
+  //   sampler->samples[triggeredSample]->trigger();
+  //   rt_printf("%i sample is triggered", triggeredSample);
+  // }
   
   // Access the sliders specifying the index we obtained when creating then
   // int sensitivity = static_cast<int>(controller.getSliderValue(gSensitivitySliderIdx));
