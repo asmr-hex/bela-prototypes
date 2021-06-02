@@ -35,7 +35,7 @@ bool setup(BelaContext *context, void *userData) {
   sampler->load("samples/glass-harp.wav");
   
   // Set up the GUI
-  gui = new SamplerGui(context->projectName);
+  gui = new SamplerGui(context->projectName, sampler);
   // gui.setup(context->projectName);
 
   // set buffer to receive from GUI
@@ -56,8 +56,16 @@ bool setup(BelaContext *context, void *userData) {
 }
 
 void render(BelaContext *context, void *userData) {
-  gui->check(sampler);
-  
+  int* scrubInfo = gui->check(sampler);
+  int scrubSample = scrubInfo[0];
+
+  if (scrubSample) {
+    scrubInfo[0] = 0;
+
+    sampler->samples[scrubSample-1]->seek(scrubInfo[1]);
+
+    rt_printf("scrubbing %i to %i\n", scrubSample-1, scrubInfo[1]);
+  }
   //We store the DataBuffer in 'buffer'
   // DataBuffer& buffer = gui.getDataBuffer(clientBuffer0Id);
   // // Retrieve contents of the buffer as ints

@@ -1,26 +1,65 @@
 const sketch = p => {
 
   const controls = new Controls()
-  let triggerButton
-  let switchSampleButton
+  
+
   let sampleName = ''
+  let activeSample
+  let numberOfSamples = 0
+  let sampleButtons = []
+  let scrubber = null
   
   p.setup = () => {
+    controls.selectSample(0)
+    
     p.createCanvas(p.windowWidth, p.windowHeight)
+    p.rectMode(p.CORNER)
 
-    triggerButton = p.createButton("trigger")
-    triggerButton.position(0, 0)
-    triggerButton.mousePressed(() => controls.trigger())
+    p.textSize(32)
+    p.textAlign(p.LEFT, p.TOP)
+
   }
 
   p.draw = () => {
     const newSampleName = controls.readSampleName()
     if (sampleName !== newSampleName && newSampleName !== undefined) {
       sampleName = newSampleName
-      p.textSize(32)
-      p.text(sampleName.join(''), 100, 80)
-    } 
+      p.stroke(255, 255, 255)
+      p.rect(0, 0, 500, 70)
+      p.text(sampleName.join(''), 60, 0)
+    }
 
+    const info = controls.readInfo()
+    const newActiveSample = info[0]
+    const activeSampleLength = info[1]
+    const newNumberOfSamples = info[2]
+
+    if (activeSample !== newActiveSample) {
+      activeSample = newActiveSample
+
+      if (scrubber !== null) {
+        scrubber.remove()
+      }
+      
+      scrubber = p.createSlider(0, activeSampleLength, 0)
+      scrubber.position(0, 100)
+      scrubber.input(controls.scrubSample(activeSample, scrubber))
+    }
+    
+    if (numberOfSamples !== newNumberOfSamples) {
+      numberOfSamples = newNumberOfSamples
+      
+      for (b of sampleButtons) {
+        b.remove()
+      }
+
+      for (let i = 0; i < numberOfSamples; i++) {
+        let button = p.createButton(`${i}`)
+        button.position(30 * i, 60)
+        button.mousePressed(() => controls.selectSample(i))
+        sampleButtons.push(button)
+      }
+    }
   }
 }
 
@@ -28,21 +67,33 @@ class Controls {
   constructor() {
     this.channels = {
       output: {
-        trigger: 0,
+        select: 0,
+        scrub: 1,
       },
       input: {
+        info: 0,
         name: 1,
       },
     }
   }
 
+  selectSample(n) {
+    Bela.data.sendBuffer(this.channels.output.select, 'int', [n+1])
+  }
+  
   readSampleName() {
     return Bela.data.buffers[this.channels.input.name]
   }
-  
-  trigger() {
-    console.log("DOINK")
-    Bela.data.sendBuffer(this.channels.output.trigger, 'int', [1])
+
+  readInfo() {
+    return Bela.data.buffers[this.channels.input.info]
+  }
+
+  scrubSample(n, scrubber) {
+    const f = () => {
+      Bela.data.sendBuffer(this.channels.output.scrub, 'int', [n+1, scrubber.value()])
+    }
+    return f
   }
 }
 
