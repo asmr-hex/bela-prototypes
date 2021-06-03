@@ -31,6 +31,7 @@ private:
   const int buffer_len = 22050;
   int total_frames;
 
+  bool restart = false;
   int prev_start;
   int start;
   int end;

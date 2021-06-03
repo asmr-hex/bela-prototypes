@@ -72,7 +72,7 @@ void Sample::forceable_seek(int frame, bool force) {
   start = frame;
 
   if (prev_start != start || force) {
-    // TODO reset read head and buffers.
+    restart = true;
     must_fill_next_buffer_asap = true;
     must_fill_next_buffer = true; 
   }
@@ -93,8 +93,9 @@ bool Sample::buffer_needs_filling() {
 void Sample::fill_buffer() {
   if (is_loading) return;
 
-  if (start != prev_start) {
+  if (start != prev_start || restart) {
     // seek location has changed (REFACTOR THIS)
+    restart = false;
     prev_start = start;
     file_read_ptr = start; // set file read buffer to new location
   } else {
