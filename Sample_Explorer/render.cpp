@@ -16,20 +16,14 @@
 
 #include <Bela.h>
 #include <libraries/AudioFile/AudioFile.h>
-#include <libraries/Gui/Gui.h>
-#include <libraries/GuiController/GuiController.h>
 
 #include <sampler.h>
+#include <gui.h>
 
 
 Sampler* sampler;
+SamplerGui* gui;
 
-Gui gui;
-GuiController controller;
-
-unsigned int gSensitivitySliderIdx;
-unsigned int gStartSliderIdx;
-int gStartValue = 0;
 
 bool setup(BelaContext *context, void *userData) {
   sampler = new Sampler();
@@ -37,26 +31,14 @@ bool setup(BelaContext *context, void *userData) {
   sampler->load("samples/glass-harp.wav");
   
   // Set up the GUI
-  gui.setup(context->projectName);
-  // and attach to it
-  controller.setup(&gui, "Controls");
-  
-  // Arguments: name, default value, minimum, maximum, increment
-  gSensitivitySliderIdx = controller.addSlider("Scrub Sensitivity", 4410, 0, sampler->samples[0]->get_buffer_len(), 1); 
-  gStartSliderIdx = controller.addSlider("Scrub", 0, 0, sampler->samples[0]->size(), 4410);
-	
+  gui = new SamplerGui(context->projectName, sampler);
+
   return true;
 }
 
 void render(BelaContext *context, void *userData) {
-  // Access the sliders specifying the index we obtained when creating then
-  int sensitivity = static_cast<int>(controller.getSliderValue(gSensitivitySliderIdx));
-	
-  // update the sensitivity of the scrubber
-  controller.getSlider(gStartSliderIdx).setStep(sensitivity);
-	
-  // get scrubber position
-  sampler->samples[0]->seek(static_cast<int>(controller.getSliderValue(gStartSliderIdx)));
+  // handle gui updates
+  gui->update(sampler);
 
   // fill buffers if necessary
   sampler->schedule_fill_buffers();
