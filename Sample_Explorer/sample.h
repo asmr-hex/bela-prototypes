@@ -8,6 +8,8 @@
 #include <Bela.h>
 
 
+enum Playback { Playing, Stopped };
+
 class Sample {
 public:
   Sample(std::string filename);
@@ -33,6 +35,8 @@ private:
   int start;
   int end;
 
+  Playback status = Stopped;
+  
   bool is_loading = false;
   
   // Three buffers for each channel:
@@ -51,11 +55,6 @@ private:
   
   // read pointer relative to file, incremented by buffer_len
   int file_read_ptr = 0;
-
-  // const int fill_task_priority = 90;
-  // AuxiliaryTask fill_buffer_task;
-  
-  // void init_fill_buffer_task();
 
   void forceable_seek(int frame, bool force);
 };

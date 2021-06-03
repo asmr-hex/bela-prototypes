@@ -4,7 +4,6 @@
 
 
 Sample::Sample(std::string filename) {
-  // init_fill_buffer_task();
   load(filename);
 }
 
@@ -36,29 +35,32 @@ void Sample::load(std::string filename) {
 }
 
 void Sample::trigger() {
+  status = Playing;
+  
   forceable_seek(0, true);
 }
 
 void Sample::advance() {
+  // do not advance if we are stopped!
+  if (status == Stopped) return;
+
   // increment the buffer read pointer
   if (++buffer_read_ptr >= buffer_len) {
 
     // shucks.
     if (must_fill_next_buffer)
-      rt_printf("Couldn't load next buffer in time :( -- try increasing buffer size!)");
+      rt_printf("Couldn't load next buffer in time :( -- try increasing buffer size!)\n");
 
     buffer_read_ptr = 0;
     active_buffer = !active_buffer;
     must_fill_next_buffer = true;
-
-    // schedule next buffer fill task
-    // Bela_scheduleAuxiliaryTask(fill_buffer_task);
-
-    // rt_printf("Scheduled Task! (active buffer: %i)\n", active_buffer);
   }
 }
 
 float Sample::read(int channel) {
+  if (status == Stopped)
+    return 0.0;
+  
   return buffer[active_buffer][channel%buffer[0].size()][buffer_read_ptr];
 }
 
@@ -85,22 +87,8 @@ int Sample::size() {
 }
 
 bool Sample::buffer_needs_filling() {
-  return must_fill_next_buffer || must_fill_next_buffer_asap;
+  return (status == Playing) && (must_fill_next_buffer || must_fill_next_buffer_asap);
 }
-
-// void Sample::init_fill_buffer_task() {
-//   fill_buffer_task =
-//     Bela_createAuxiliaryTask([] (void *user_data) {
-//                                Sample *this_sample = static_cast<Sample *>(user_data);
-//                                this_sample->fill_buffer();
-//                              },
-//                              fill_task_priority,
-//                              "fill_buffer",
-//                              this);
-    
-//   if (fill_buffer_task == 0)
-//     throw "Unable to schedule auxiliary fill buffer task!";
-// }
 
 void Sample::fill_buffer() {
   if (is_loading) return;
@@ -125,6 +113,10 @@ void Sample::fill_buffer() {
   if ( (file_read_ptr + buffer_len) >= (total_frames - 1) ) {
     last_frame = total_frames - 1;
     zero_pad = 1;
+
+    // TODO impl loop mode....but for now, if we reach the end of file, set
+    // status to Stopped
+    status = Stopped;
   }
 
   for (int ch = 0; ch < buffer[0].size(); ch++) {

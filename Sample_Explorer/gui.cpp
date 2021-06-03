@@ -16,19 +16,11 @@ SamplerGui::SamplerGui(std::string name, Sampler *sampler) : _name(name) {
   scrubChannel = _gui->setBuffer('d', 2);
 }
 
-void SamplerGui::sendSamplerSize(int n) {
-  // _gui->sendBuffer(size_buffer, n);
-}
-
-void SamplerGui::sendSampleName(const char *name) {
-  _gui->sendBuffer(name_output, name);
-}
-
-int* SamplerGui::check(Sampler *sampler) {
+void SamplerGui::update(Sampler *sampler) {
+  // Check whether a new sample has been selected
   DataBuffer& buffer = _gui->getDataBuffer(infoRequestChannel);
   int* data = buffer.getAsInt();
   int selected = data[0];
-
   if (selected) {
     data[0] = 0;
     _gui->sendBuffer(name_output, sampler->samples[selected-1]->filename.c_str(), sampler->samples[selected-1]->filename.length());
@@ -36,15 +28,18 @@ int* SamplerGui::check(Sampler *sampler) {
     info[1] = sampler->samples[selected-1]->size();
     info[2] = sampler->size();
     _gui->sendBuffer(info_output, info);
+
+    // currently, selecting a sample from the gui is the same as triggering it
+    sampler->samples[selected-1]->trigger();
   }
 
+  // check if scrubbing has occured to the current sample
   DataBuffer& scrubBuffer = _gui->getDataBuffer(scrubChannel);
   int* scrubData = scrubBuffer.getAsInt();
   int scrubbed = scrubData[0];
-  
-  // if (scrubbed) {
-  //   rt_printf("scrubbing %i\n", scrubData[0]);
-  // }
-  
-  return scrubData;
+  if (scrubbed) {
+    scrubData[0] = 0;
+    sampler->samples[scrubbed-1]->seek(scrubData[1]);
+  }
+
 }

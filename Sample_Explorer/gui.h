@@ -17,12 +17,8 @@ class Sampler;
 class SamplerGui {
 public:
   SamplerGui(std::string name, Sampler *sampler);
-  // ~SamplerGui();
 
-  int* check(Sampler *sampler);
-  
-  void sendSamplerSize(int n);
-  void sendSampleName(const char* name);
+  void update(Sampler *sampler);
 private:
   Gui *_gui;
   std::string _name;
@@ -35,7 +31,6 @@ private:
   // receive buffer IDs
   int infoRequestChannel;
   int scrubChannel;
-  
 };
 
 #endif
